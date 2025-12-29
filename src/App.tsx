@@ -92,29 +92,46 @@ const App = () => {
       }
 
       const encodedUserId = encodeURIComponent(userId);
-      const response = await fetch(`https://qiita.com/api/v2/items?page=1&per_page=100&query=user:${encodedUserId}`, {
-        headers: headers
-      });
+      const allArticles: Article[] = [];
+      let page = 1;
+      const perPage = 100;
+      let hasMore = true;
 
-      if (!response.ok) {
-        if (response.status === 403) {
-          throw new Error('API制限に達しました。しばらく待つか、APIトークンを設定してください。');
-        } else if (response.status === 404) {
-          throw new Error('ユーザーが見つかりませんでした。');
+      // 100件以上の記事がある場合、ループで全て取得
+      while (hasMore) {
+        const response = await fetch(`https://qiita.com/api/v2/items?page=${page}&per_page=${perPage}&query=user:${encodedUserId}`, {
+          headers: headers
+        });
+
+        if (!response.ok) {
+          if (response.status === 403) {
+            throw new Error('API制限に達しました。しばらく待つか、APIトークンを設定してください。');
+          } else if (response.status === 404) {
+            throw new Error('ユーザーが見つかりませんでした。');
+          } else {
+            throw new Error(`エラーが発生しました: ${response.statusText}`);
+          }
+        }
+
+        const data: Article[] = await response.json();
+        allArticles.push(...data);
+
+        // 取得した件数がperPage未満の場合、これ以上取得する記事がない
+        if (data.length < perPage) {
+          hasMore = false;
         } else {
-          throw new Error(`エラーが発生しました: ${response.statusText}`);
+          page++;
         }
       }
 
-      const data: Article[] = await response.json();
-      setArticles(data);
+      setArticles(allArticles);
 
-      const totalLgtm = data.reduce((sum: number, item: Article) => sum + item.likes_count, 0);
+      const totalLgtm = allArticles.reduce((sum: number, item: Article) => sum + item.likes_count, 0);
       
       setStats({
         totalLgtm,
-        totalStock: data.reduce((sum: number, item: Article) => sum + (item.stocks_count || 0), 0),
-        count: data.length
+        totalStock: allArticles.reduce((sum: number, item: Article) => sum + (item.stocks_count || 0), 0),
+        count: allArticles.length
       });
 
     } catch (err) {
@@ -135,7 +152,7 @@ const App = () => {
     setError(null);
     
     try {
-      const articlesSummary = articles.slice(0, 30).map((a: Article) => `- タイトル: ${a.title} (タグ: ${a.tags.map((t: { name: string }) => t.name).join(', ')})`).join('\n');
+      const articlesSummary = articles.slice(0, 50).map((a: Article) => `- タイトル: ${a.title} (タグ: ${a.tags.map((t: { name: string }) => t.name).join(', ')})`).join('\n');
       
       const prompt = `
         あなたは技術記事の分析官です。以下のQiita記事リスト（タイトルとタグ）を元に、このエンジニアの技術的な強み、主に関心を持っている技術領域、記事の傾向を分析してください。
@@ -166,7 +183,7 @@ const App = () => {
     setError(null);
 
     try {
-      const articlesSummary = articles.slice(0, 40).map((a: Article) => `- ${a.title}`).join('\n');
+      const articlesSummary = articles.slice(0, 50).map((a: Article) => `- ${a.title}`).join('\n');
 
       const prompt = `
         あなたはテックブログの編集者です。
