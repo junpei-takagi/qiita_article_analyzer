@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { Search, Download, ExternalLink, ThumbsUp, Bookmark, AlertCircle, Loader2, User, Key, ArrowUpDown, ArrowUp, ArrowDown, Sparkles, X, Lightbulb } from 'lucide-react';
+import { Analytics } from '@vercel/analytics/react';
 
 interface Article {
   id: string;
@@ -635,6 +636,7 @@ const App = () => {
           </div>
         )}
       </div>
+      <Analytics />
     </div>
   );
 };
