@@ -1,0 +1,2 @@
+# qiita_qrticle_analyzer
+Qiitaユーザーの記事一覧を取得し、統計情報を表示するWebアプリケーションです。Google Gemini APIを使用したAI機能により、記事の傾向分析や次の記事ネタの提案なども行えます。
